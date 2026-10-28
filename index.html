@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a203c" />
+  <meta name="description" content="Al Bahar Tours & Travels — create beautifully personalised travel itineraries." />
+  <title>Itinerary Studio | Al Bahar Tours & Travels</title>
+  <link rel="icon" href="assets/al-bahar-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="appShell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn mobile-menu" type="button" data-action="toggle-menu" aria-label="Open navigation"><span class="hamburger">☰</span></button>
+        <div class="brand-lockup">
+          <div class="brand-icon"><span class="brand-monogram">AB</span></div>
+          <div class="brand-name"><strong>Itinerary<span>Studio</span></strong><small>AL BAHAR TOURS & TRAVELS</small></div>
+        </div>
+        <span class="edition-pill">DEMO · V1.1</span>
+      </div>
+      <div class="topbar-right">
+        <span class="save-indicator" id="saveStatus"><span class="save-dot"></span> Saved locally</span>
+        <button class="btn btn-quiet hide-mobile" type="button" data-action="download-json" title="Back up the current itinerary"><span data-icon="download"></span> Export data</button>
+        <button class="btn btn-primary" type="button" data-action="print"><span data-icon="file"></span><span class="print-button-label"> Export PDF</span></button>
+      </div>
+    </header>
+
+    <div class="app-layout">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-scroll">
+          <div class="sidebar-intro"><span class="eyebrow">YOUR WORKSPACE</span><h2>Travel, beautifully planned.</h2><p>Craft exceptional itineraries in minutes.</p></div>
+          <div class="sidebar-divider"></div>
+          <div class="nav-section-label">WORKSPACE</div>
+          <nav class="main-nav" id="mainNav"></nav>
+          <div class="sidebar-divider"></div>
+          <div class="nav-section-header"><span class="nav-section-label">YOUR ITINERARIES</span><button type="button" class="micro-btn" data-action="new-trip" title="New itinerary">+</button></div>
+          <div id="savedTripList" class="saved-trip-list"></div>
+          <div class="sidebar-tip"><span class="tip-icon">✦</span><p><strong>Made for your team</strong><br/>No external APIs or live prices. Create, preview and share.</p></div>
+        </div>
+        <div class="sidebar-bottom"><span class="live-dot"></span><span>V1.1 · Manual itinerary builder</span></div>
+      </aside>
+
+      <main class="workspace">
+        <section class="editor-panel" id="editorPanel">
+          <div id="editorContent"></div>
+        </section>
+        <section class="preview-panel" id="previewPanel">
+          <div class="preview-toolbar"><div><span class="eyebrow">CUSTOMER VIEW</span><h3>Live preview</h3></div><div class="preview-live"><span class="live-dot"></span> LIVE</div></div>
+          <div class="preview-navigation" id="previewNavigation"></div>
+          <div class="preview-background"><div id="previewStage" class="preview-stage"></div></div>
+          <div class="preview-bottom"><span>Designed for A4 printing</span><button type="button" class="link-button" data-action="print">Open print dialog ↗</button></div>
+        </section>
+      </main>
+    </div>
+    <nav class="mobile-tabs" id="mobileTabs"><button data-action="mobile-view" data-view="edit" class="active">✎ &nbsp; Edit</button><button data-action="mobile-view" data-view="preview">▤ &nbsp; Preview</button></nav>
+  </div>
+  <div id="printRoot" aria-hidden="true"></div>
+  <input type="file" id="importFile" accept=".json,application/json" hidden />
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="modal-backdrop" id="modalRoot" hidden></div>
+  <script src="app.js" defer></script>
+</body>
+</html>
