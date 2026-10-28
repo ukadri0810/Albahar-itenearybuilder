@@ -1,4 +1,34 @@
-# Al Bahar Itinerary Studio — V1.2 Quick Create
+# Al Bahar Itinerary Studio — V1.3 (Quick Create + Google Hotel Search)
+
+**Ready to deploy on GitHub Pages. All hotel search functionality is OPTIONAL.**
+
+## Quick installation / update from V1.2
+
+1. Download and extract the ZIP; upload its **contents** to the GitHub repository root.
+2. Files should be directly accessible as `index.html`, `app.js`, `styles.css`, `assets/...`, `.nojekyll`.
+3. In GitHub → Settings → Pages → Deploy from a branch: choose `main`, `/(root)`.
+4. Existing browser-stored itineraries remain on the **same site/origin and browser** because the localStorage key remains the same. Export JSON first as a backup. Changing the repository URL or browser does not transfer local data.
+
+## Optional Google hotel search setup (no API key included)
+
+1. Create a Google Cloud project in your **own** account at https://console.cloud.google.com/ and enable billing.
+2. Enable **Maps JavaScript API** and **Places API (New)** in APIs & Services.
+3. Create a browser API key. **Application restriction: Websites (HTTP referrers)**. Add your GitHub Pages site, e.g. `https://YOUR-USERNAME.github.io/*` (and custom domain if applicable).
+4. **API restrictions**: Allow only **Maps JavaScript API** and **Places API (New)**. Set daily quotas and billing alerts as appropriate.
+5. On the hosted website, open **Hotel & stay** → paste the **restricted browser API key** → **Enable hotel search** → **Search hotels with Google**. Search for a hotel by name, select a suggestion, confirm it against the booking, and the name and address will be inserted into the hotel form.
+6. Enter actual room configuration, meals and check-in/check-out details manually. These are not obtained from Google.
+
+**Keep in mind:** GitHub Pages is a public static website. Maps JavaScript API keys in browser applications are publicly observable; website and API restrictions are essential. The key is saved in the current browser's localStorage, not baked into the downloaded source code, and not exported in itinerary backups. Each staff browser must configure the key independently in this prototype. If changing the key after initial connection, reload the page. Never publish an unrestricted key or a server-side secret.
+
+**Billing:** Google Maps Platform requires a billing-enabled project, even when eligible free monthly usage allowances cover the cost. Google may charge beyond quotas; refer to the current https://developers.google.com/maps/billing-and-pricing/pricing-india and your own billing account for exact rates.
+
+**Licensing:** Only the hotel's name and address are requested from Google. Google hotel photos are **not** fetched, stored or embedded in PDFs. Confirm the selected hotel's details before sending. Follow Google's Maps Platform Terms for the intended use of Places data, including retention and attribution requirements; this demo is not a substitute for a contractual review.
+
+**What is NOT done:** No live hotel prices, room availability, supplier confirmation, hotel photo API, activity API, multi-hotel itinerary search or employee sync. The existing manual hotel input and day-by-day plan builder continue to work without Google configured.
+
+---
+
+# Earlier V1.2 features and workflow
 
 **Fast, no-API itinerary generation for client approval.**
 

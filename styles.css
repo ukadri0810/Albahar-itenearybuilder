@@ -126,3 +126,20 @@
 .quick-edit-link{background:#eef3f7;border:0;border-radius:6px;padding:7px 11px;color:#3c6688;font-size:11px;font-weight:800;cursor:pointer}
 .quick-export-row{padding-top:9px;border-top:1px solid #edf0f4;margin-top:22px}
 @media(max-width:600px){.quick-main-card{padding:17px}.quick-row .btn{width:100%;justify-content:center}.quick-intro{margin-top:19px}.quick-main-card textarea{min-height:190px}}
+
+/* V1.3 optional Google Hotel Search. All core editor/PDF features work without it. */
+.google-hotel-setup{display:flex;flex-direction:column;align-items:flex-start;gap:11px}
+.google-hotel-setup input{width:100%;max-width:560px;min-width:0;padding:13px 14px;border:1px solid #ccd6e3;border-radius:10px;background:#fff;color:#172b4c;font:inherit}
+.google-hotel-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.google-key-ok{display:inline-flex;align-items:center;gap:7px;color:#137352;font-size:12px;font-weight:700}
+.google-key-ok svg{height:16px;width:16px}
+.google-hotel-mount{position:relative;min-height:55px;width:100%;max-width:640px}
+.google-hotel-picker, gmp-place-autocomplete.google-hotel-picker{display:block;width:100%;max-width:640px;color-scheme:light;--gmpx-color-surface:#fff}
+.google-hotel-mount .google-hotel-picker{min-height:48px}
+
+.hotel-optional-details{margin:16px 0 0}
+.hotel-optional-details>summary{cursor:pointer;list-style:none;padding:14px 17px;border:1px solid #dce5ee;border-radius:12px;background:#f5f8fc;font-size:13px;font-weight:750;color:#173b63}
+.hotel-optional-details>summary::after{content:'＋';float:right;font-size:17px;font-weight:500}
+.hotel-optional-details[open]>summary::after{content:'−'}
+.hotel-optional-details>summary::-webkit-details-marker{display:none}
+.hotel-optional-details .section-card{margin-top:12px}

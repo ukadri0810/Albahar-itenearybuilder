@@ -1,5 +1,5 @@
 /*
- * AL BAHAR ITINERARY STUDIO — V1.2 QUICK CREATE WORKFLOW
+ * AL BAHAR ITINERARY STUDIO — V1.3 QUICK CREATE + OPTIONAL GOOGLE HOTEL SEARCH
  * Static, no-build, GitHub Pages compatible application.
  * Data stays in the browser (localStorage) unless the user exports JSON.
  * Printing uses the browser's native Print / Save as PDF workflow.
@@ -11,7 +11,7 @@
     logo: 'assets/al-bahar-logo.png',
     cover: 'assets/destinations/dubai/signature.webp'
   };
-  // All images are bundled with the website: no network requests or API keys.
+  // Destination cover images remain bundled: Google is optional and only searches hotel names/addresses.
   // Add a destination here and put its WebP images under assets/destinations/<slug>/.
   const DESTINATIONS = [
     {id:'kashmir',name:'Kashmir',aliases:['kashmir','srinagar','dal lake','gulmarg','pahalgam','sonamarg'],images:[
@@ -34,6 +34,82 @@
     const d=catalogDestination(t), images=catalogImages(d), img=safeImage(t.coverImage);
     if(img && (img.startsWith('data:') || !img.startsWith('assets/destinations/')))return img;
     return images.some(x=>x.src===img)?img:(images[0]?.src||'');
+  }
+  // Google Maps JavaScript API keys are browser-visible by design. Always restrict
+  // this key to your published site (HTTP referrers) and to Maps JavaScript API
+  // plus Places API (New) in Google Cloud Console.
+  const GOOGLE_KEY_STORAGE = 'albahar-google-places-browser-key';
+  const googleKey = () => (localStorage.getItem(GOOGLE_KEY_STORAGE)||'').trim();
+  let googleScriptPromise = null;
+  function loadGoogleMaps(key) {
+    if(window.google?.maps?.importLibrary)return Promise.resolve();
+    if(googleScriptPromise)return googleScriptPromise;
+    googleScriptPromise = new Promise((resolve,reject) => {
+      const callback = '__alBaharGoogleMapsLoaded';
+      let finished = false;
+      const settle = (err) => { if(finished)return; finished = true; clearTimeout(timeout); delete window[callback]; err ? reject(err) : resolve(); };
+      const timeout = setTimeout(() => settle(new Error('Google Maps took too long to load. Check your network and API setup.')), 18000);
+      window[callback] = () => settle();
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&loading=async&libraries=places&callback=${callback}`;
+      script.async = true;
+      script.onerror = () => settle(new Error('Google Maps failed to load. Check your allowed website and enabled APIs.'));
+      document.head.appendChild(script);
+    }).catch(e=>{googleScriptPromise=null;throw e;});
+    return googleScriptPromise;
+  }
+  async function mountHotelSearch(){
+    const mount=document.getElementById('googleHotelSearchMount');
+    if(!mount || mount.dataset.loading)return;
+    mount.dataset.loading='1';
+    const status=document.getElementById('googleHotelSearchStatus');
+    if(status)status.textContent='Connecting to Google Places…';
+    try{
+      await loadGoogleMaps(googleKey());
+      const lib=await window.google.maps.importLibrary('places');
+      if(!mount.isConnected || !mount.id)return;
+      if(!lib.PlaceAutocompleteElement)throw Error('Google Places autocomplete is not available. Check that Places API (New) is enabled.');
+      const picker = new lib.PlaceAutocompleteElement({includedPrimaryTypes:['hotel','resort_hotel','lodging','guest_house','hostel']});
+      picker.setAttribute('placeholder','Search hotel or resort by name…');
+      picker.setAttribute('aria-label','Search hotel using Google Places');
+      picker.className='google-hotel-picker';
+      mount.replaceChildren(picker);
+      if(status)status.textContent='Select a hotel from the suggestions to fill its name and address.';
+      picker.addEventListener('gmp-select',async ({placePrediction})=>{
+        const current=active();
+        try {
+          if(status)status.textContent='Loading selected hotel…';
+          const place=placePrediction.toPlace();
+          await place.fetchFields({fields:['displayName','formattedAddress']});
+          if(!place.displayName)throw Error('Google did not return a hotel name.');
+          const foundName=place.displayName, foundAddress=place.formattedAddress||'';
+          modal('Confirm hotel selection',`<strong>${esc(foundName)}</strong><br>${esc(foundAddress)}<br><br>Check the hotel against the supplier booking before using these details in the customer itinerary.`,[
+            {label:'Cancel'},
+            {label:'Use confirmed hotel',primary:true,action:()=>{
+              current.hotel.name=foundName;
+              if(foundAddress)current.hotel.address=foundAddress;
+              current.updatedAt=new Date().toISOString();
+              state.hotelSearchOpen=false;
+              save();render();showToast('Hotel details added. Fill confirmed room and meal arrangements.');
+            }}
+          ]);
+        }catch(e){if(status)status.textContent='Could not fetch hotel details: '+e.message;showToast('Google hotel lookup failed. You can still enter details manually.');}
+      });
+      picker.addEventListener('gmp-error',()=>{if(status)status.textContent='Google returned an error. Check key, allowed referrers and billing.';});
+    }catch(e){
+      if(status)status.textContent=String(e.message||e);
+      mount.dataset.loading='';
+      showToast('Google search unavailable. Manual hotel entry still works.');
+    }
+  }
+  function renderHotelSearch(){
+    const key=googleKey();
+    if(!key) return card('Google hotel search (optional)','Set up once, then select hotels instead of typing their names.',
+      `<div class="google-hotel-setup"><label for="googleKeyInput" class="quick-label">Google Maps browser API key</label><input type="password" id="googleKeyInput" autocomplete="off" spellcheck="false" placeholder="Paste a restricted Google Maps API key"/><button type="button" class="btn btn-primary btn-mini" data-action="save-google-key">Enable hotel search</button></div><p class="field-help">Enable Maps JavaScript API and Places API (New), and restrict this browser key to your GitHub Pages domain. Billing must be enabled. Without a key, manual entry still works.</p>`,'globe');
+    return card('Find a hotel with Google','Optional quick search; room configuration and meals remain manual.',
+      `<div class="google-hotel-actions"><span class="google-key-ok">${icon('check',true)} Google key configured on this browser</span><button type="button" class="btn btn-quiet btn-mini" data-action="clear-google-key">Remove key</button></div>`+
+      (state.hotelSearchOpen ? `<div id="googleHotelSearchMount" class="google-hotel-mount"></div><p id="googleHotelSearchStatus" role="status" class="field-help">Preparing hotel search…</p>` : `<button type="button" class="btn btn-primary" data-action="open-google-hotel">${icon('hotel',true)} Search hotels with Google</button>`)+
+      `<p class="field-help">Google only supplies the selected hotel's name and address. Prices, availability, rooms and photographs are not fetched. Confirm all details before sending the itinerary.</p>`,'globe');
   }
   const I = {
     home: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
@@ -125,7 +201,7 @@
     d.id ||= id();d.brand.logo=safeImage(d.brand.logo)||ASSETS.logo;d.coverImage=safeImage(d.coverImage);if(d.coverImage==='assets/dubai-skyline.jpg')d.coverImage='';d.updatedAt=new Date().toISOString();
     return d;
   }
-  let state={trips:[],activeId:'',tab:'quick',dayIndex:0,previewKey:'cover',mobileView:'edit'};
+  let state={trips:[],activeId:'',tab:'quick',dayIndex:0,previewKey:'cover',mobileView:'edit',hotelSearchOpen:false};
   function load(){try{const raw=JSON.parse(localStorage.getItem(STORAGE)||'null');if(raw?.trips?.length){state.trips=raw.trips.slice(0,50).map(hydrateTrip);state.activeId=state.trips.find(t=>t.id===raw.activeId)?.id||state.trips[0].id;return;}}catch(e){console.warn('Could not read saved itineraries',e);}const first=sample();state.trips=[first];state.activeId=first.id;save();}
   function active(){return state.trips.find(t=>t.id===state.activeId)||state.trips[0];}
   function save(){try{localStorage.setItem(STORAGE,JSON.stringify({trips:state.trips,activeId:state.activeId}));const node=document.getElementById('saveStatus');if(node)node.innerHTML='<span class="save-dot"></span> Saved locally';return true;}catch(e){showToast('Browser storage is full. Export JSON to protect your work.');const node=document.getElementById('saveStatus');if(node)node.textContent='Storage full';return false;}}
@@ -157,10 +233,10 @@
     card('Destination & travel dates','The day-by-day plan adjusts when dates change.',`<div class="form-grid">${field('Destination / city','destination',t.destination,{placeholder:'e.g. Dubai',required:true})}${field('Country / region','country',t.country,{placeholder:'e.g. United Arab Emirates'})}${field('Departure date','startDate',t.startDate,{type:'date',required:true})}${field('Return date','endDate',t.endDate,{type:'date',required:true})}</div><div class="section-divider"></div><div class="form-grid cols-3">${field('Adults','adults',t.adults,{type:'number',min:0,max:200})}${field('Children','children',t.children,{type:'number',min:0,max:200})}${field('Rooms','rooms',t.rooms,{type:'number',min:0,max:200})}</div><div class="section-divider"></div><div class="form-grid">${field('Children ages (optional)','childrenAges',t.childrenAges,{placeholder:'e.g. 3, 8'})}<div class="field"><label>Trip duration</label><div class="info-stripe">${icon('calendar',true)} ${esc(durationLabel(t))}</div></div></div>`,'calendar')+
     card('Destination cover collection','Cover images are suggested automatically for your selected destination. No image API needed.',renderCoverPicker(t),'image')+
     card('Travel information','Optional arrival and departure notes.',`<div class="form-grid cols-1">${field('Arrival information','arrivalInfo',t.arrivalInfo,{type:'textarea',placeholder:'Arrival flight information or special pickup instructions'})}${field('Departure information','departureInfo',t.departureInfo,{type:'textarea',placeholder:'Departure flight information or airport transfer instructions'})}</div>`,'trip')+actions('hotel','Continue to hotel');}
-  function renderHotel(){const t=active(),h=t.hotel;return top('Hotel & stay','Enter accommodation details once for the entire trip.')+
-    info('Phase 1 is manual entry. You can type any domestic or international hotel name without creating it in a separate library.')+
+  function renderHotel(){const t=active(),h=t.hotel;return top('Hotel & stay','Find a hotel with Google or enter details manually.')+
+    renderHotelSearch()+
     card('Accommodation details','Displayed on the dedicated hotel information page.',`<div class="form-grid">${field('Hotel name','hotel.name',h.name,{full:true,placeholder:'e.g. Crowne Plaza Dubai Deira'})}${field('Location / address','hotel.address',h.address,{full:true,placeholder:'Street / area / city'})}${field('Check-in','hotel.checkIn',h.checkIn,{type:'date'})}${field('Check-out','hotel.checkOut',h.checkOut,{type:'date'})}${field('Room configuration','hotel.roomType',h.roomType,{placeholder:'e.g. 2 × Deluxe Rooms'})}${field('Meal plan','hotel.board',h.board,{placeholder:'e.g. Breakfast included'})}</div>`,'hotel')+
-    card('Hotel introduction','Use your own confirmed hotel description and highlights.',`<div class="form-grid cols-1">${field('Hotel overview','hotel.description',h.description,{type:'textarea',rows:4,placeholder:'Write a short, customer-friendly description'})}${field('Property highlights','hotel.highlights',h.highlights,{type:'textarea',rows:5,placeholder:'One highlight per line — dining, location, facilities...'})}${field('Important hotel notes','hotel.notes',h.notes,{type:'textarea',rows:3,placeholder:'Local tourism taxes, check-in requirements, etc.'})}</div>`,'file')+
+    `<details class="hotel-optional-details"><summary>Optional hotel descriptions, highlights & notes</summary>${card('Hotel introduction','Only add text if the customer itinerary requires it.',`<div class="form-grid cols-1">${field('Hotel overview','hotel.description',h.description,{type:'textarea',rows:4,placeholder:'Optional hotel overview'})}${field('Property highlights','hotel.highlights',h.highlights,{type:'textarea',rows:4,placeholder:'Optional highlights, one per line'})}${field('Important hotel notes','hotel.notes',h.notes,{type:'textarea',rows:3,placeholder:'Optional property notes'})}</div>`,'file')}</details>`+
     card('Photo-free premium layout','The customer PDF uses a designed accommodation summary instead of hotel photo placeholders.',`<div class="clean-stay-callout">${icon('check')}<div><strong>No hotel gallery required</strong><p>Hotel name, dates, room details, meal plan, description and important notes will be styled as a premium travel proposal. Adding or changing hotels requires no image uploads.</p></div></div>`,'spark')+actions('days','Build daily itinerary');}
   function renderEvent(dayIndex,e,i){const prefix=`days.${dayIndex}.events.${i}`;return `<div class="activity-card"><div class="activity-card-header"><span class="activity-index">${String(i+1).padStart(2,'0')}</span><strong>${esc(e.name||'New activity')}</strong><div class="activity-actions"><button title="Move up" data-action="move-event-up" data-event="${i}" ${i===0?'disabled':''}>${icon('up',true)}</button><button title="Move down" data-action="move-event-down" data-event="${i}" ${i===active().days[dayIndex].events.length-1?'disabled':''}>${icon('down',true)}</button><button title="Duplicate" data-action="duplicate-event" data-event="${i}">${icon('copy',true)}</button><button title="Remove" data-action="remove-event" data-event="${i}">${icon('trash',true)}</button></div></div><div class="activity-card-body"><div class="form-grid">${field('Service type',`${prefix}.type`,e.type,{options:categories})}${field('Pickup / start time',`${prefix}.time`,e.time,{placeholder:'e.g. 9:00 AM'})}${field('Activity / service name',`${prefix}.name`,e.name,{full:true,placeholder:'e.g. Abu Dhabi City Tour'})}${field('Description',`${prefix}.description`,e.description,{full:true,type:'textarea',rows:3,placeholder:'Customer-facing description of the activity'})}${field('Transfer arrangement',`${prefix}.transfer`,e.transfer,{placeholder:'e.g. Private transfers'})}${field('Tickets / inclusions',`${prefix}.tickets`,e.tickets,{placeholder:'e.g. Entry ticket included'})}${field('Duration (optional)',`${prefix}.duration`,e.duration,{placeholder:'e.g. 4 hours'})}${field('Extra notes',`${prefix}.notes`,e.notes,{placeholder:'Any important conditions'})}</div></div></div>`;}
   function renderDays(){const t=active();state.dayIndex=Math.max(0,Math.min(state.dayIndex,t.days.length-1));const n=state.dayIndex,d=t.days[n],date=plusDays(t.startDate,n);return top('Day-by-day plan',`${t.days.length} days of travel · add and arrange activities however you like.`,`<span class="pill-label">${t.days.length} days</span>`)+
@@ -288,7 +364,7 @@
   let resizeObserver;
   function sizePreview(){const stage=document.getElementById('previewStage'), paper=stage.querySelector('.preview-scale');if(!paper)return;const width=Math.max(220,stage.parentElement.clientWidth);const scale=Math.min(.95,width/794);paper.style.transform=`scale(${scale})`;stage.style.width=(794*scale)+'px';stage.style.height=(paper.scrollHeight*scale)+'px';}
   function renderPreview(){const t=active(),pages=getPages(t);const index=Math.max(0,pages.findIndex(p=>p.key===state.previewKey));const el=document.getElementById('previewStage');if(!el)return;el.innerHTML=`<div class="preview-scale">${renderPaperPage(t,pages[index],index+1,pages.length)}</div>`;sizePreview();}
-  function render(){renderNav();renderEditor();renderPreviewNav();renderPreview();}
+  function render(){renderNav();renderEditor();renderPreviewNav();renderPreview();if(state.tab==='hotel'&&state.hotelSearchOpen&&googleKey())mountHotelSearch();}
   function syncDays(t,oldStart,oldEnd,changedField){
     let diff=dateDiff(t.startDate,t.endDate);
     // If a date moves far from its partner, keep the previous trip length.
@@ -308,7 +384,7 @@
     if(t.hotel.checkOut===oldEnd)t.hotel.checkOut=t.endDate;
     showToast(`${need} day${need===1?'':'s'} ready for planning.`);
   }
-  function switchTab(tab){state.tab=tab;state.mobileView='edit';document.querySelector('.workspace').classList.remove('show-preview');document.querySelectorAll('#mobileTabs button').forEach(b=>b.classList.toggle('active',b.dataset.view==='edit'));document.getElementById('sidebar').classList.remove('open');render();document.getElementById('editorPanel').scrollTop=0;}
+  function switchTab(tab){state.hotelSearchOpen=false;state.tab=tab;state.mobileView='edit';document.querySelector('.workspace').classList.remove('show-preview');document.querySelectorAll('#mobileTabs button').forEach(b=>b.classList.toggle('active',b.dataset.view==='edit'));document.getElementById('sidebar').classList.remove('open');render();document.getElementById('editorPanel').scrollTop=0;}
   function eventAction(action,idx){const d=active().days[state.dayIndex];if(!d)return;
     if(action==='add-event'){d.events.push(blankEvent());}
     else if(action==='remove-event'){d.events.splice(idx,1);}
@@ -353,6 +429,20 @@
   });
   document.addEventListener('click',e=>{
     const btn=e.target.closest('[data-action]');if(!btn)return;const act=btn.dataset.action,t=active();
+    if(act==='save-google-key'){
+      const value=document.getElementById('googleKeyInput')?.value.trim()||'';
+      if(!/^[a-zA-Z0-9_-]{20,200}$/.test(value)){showToast('Enter a valid Google Maps API key.');return;}
+      try{localStorage.setItem(GOOGLE_KEY_STORAGE,value);}catch(e){showToast('Could not save the Google key in this browser.');return;}
+      state.hotelSearchOpen=false;render();showToast('Google key saved in this browser. Click Search hotels to connect.');return;
+    }
+    if(act==='clear-google-key'){
+      localStorage.removeItem(GOOGLE_KEY_STORAGE);state.hotelSearchOpen=false;render();
+      showToast('Key removed. Reload the page before connecting with a different key.');return;
+    }
+    if(act==='open-google-hotel'){
+      if(!googleKey()){showToast('Add your restricted Google Maps API key first.');return;}
+      state.hotelSearchOpen=true;render();return;
+    }
     if(act==='toggle-menu'){document.getElementById('sidebar').classList.toggle('open');return;}
     if(act==='tab'){switchTab(btn.dataset.tab);return;}
     if(act==='new-trip'){createTrip();return;}
