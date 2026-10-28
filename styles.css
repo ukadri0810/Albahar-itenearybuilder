@@ -105,3 +105,24 @@
 .stay-highlights{padding:20px 27px 22px}
 .stay-highlights-grid{gap:11px 20px;margin-top:14px}
 .stay-important{margin-top:14px;padding:16px 22px}
+
+/* V1.2: Low-friction Quick Create */
+.quick-intro{display:flex;align-items:flex-start;gap:14px;margin:25px 0 12px;color:#193654}
+.quick-step-num{width:36px;height:36px;flex:0 0 36px;border-radius:50%;display:grid;place-items:center;background:#0b365d;color:#f6d49b;font-weight:800;font-size:12px}
+.quick-intro strong{font-size:18px;letter-spacing:-.35px}.quick-intro p{font-size:12px;line-height:1.55;color:#7b8fa1;margin:5px 0 0}
+.quick-main-card{border:1px solid #e5ecf2;box-shadow:0 7px 28px #172b4110;background:#fff;border-radius:13px;padding:23px}
+.quick-collapsed{margin-top:17px;border-top:1px solid #e8edf2;padding-top:13px;display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;color:#53738b;font-size:11px;font-weight:650}
+.quick-label{display:block;color:#273f58;font-weight:800;font-size:13px;margin-bottom:10px}
+.quick-main-card textarea{width:100%;min-height:160px;border:1px solid #cbd8e3;border-radius:9px;padding:15px 16px;font:13px/1.65 var(--font-body);color:#193650;resize:vertical;outline:none;background:#fcfdfe}
+.quick-main-card textarea:focus{border-color:#b48b52;box-shadow:0 0 0 3px #e9d7b54d}
+.quick-main-card textarea::placeholder{color:#9aa9b8}
+.quick-hint{font-size:11px;color:#8091a2;line-height:1.65;margin:10px 0 4px}
+.quick-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:15px}
+.quick-template{background:#f5f8fb;border:1px solid #e2eaf2;padding:16px;border-radius:10px;margin-top:21px}
+.quick-template strong{font-size:12px;color:#214361}.quick-template p{font-size:11px;color:#74869b;margin:6px 0 13px;line-height:1.5}
+.quick-day-line{display:flex;align-items:center;gap:14px;border-bottom:1px solid #eff2f5;padding:12px 0}
+.quick-day-line:last-child{border-bottom:0}.quick-day-line>span{flex:0 0 50px;font-size:10px;font-weight:800;letter-spacing:.5px;color:#ae894f}
+.quick-day-line>div{flex:1;min-width:0}.quick-day-line strong{font-size:12px;color:#1c3854;display:block;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.quick-day-line small{color:#8697a8;font-size:10px;display:block;margin-top:4px}
+.quick-edit-link{background:#eef3f7;border:0;border-radius:6px;padding:7px 11px;color:#3c6688;font-size:11px;font-weight:800;cursor:pointer}
+.quick-export-row{padding-top:9px;border-top:1px solid #edf0f4;margin-top:22px}
+@media(max-width:600px){.quick-main-card{padding:17px}.quick-row .btn{width:100%;justify-content:center}.quick-intro{margin-top:19px}.quick-main-card textarea{min-height:190px}}

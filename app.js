@@ -1,5 +1,5 @@
 /*
- * AL BAHAR ITINERARY STUDIO — V1.1 DESTINATION COVER LIBRARY
+ * AL BAHAR ITINERARY STUDIO — V1.2 QUICK CREATE WORKFLOW
  * Static, no-build, GitHub Pages compatible application.
  * Data stays in the browser (localStorage) unless the user exports JSON.
  * Printing uses the browser's native Print / Save as PDF workflow.
@@ -90,7 +90,7 @@
   function blankDay(n=0) {return {id:id(),title:'',overview:'',events:[],meals:{breakfast:'Not included',lunch:'Not included',dinner:'Not included'},overnight:''};}
   function makeBlank(){
     const start=today();return {
-      id:id(),schemaVersion:1,reference:`AB-${String(Date.now()).slice(-6)}`,status:'Draft',customer:'',tripTitle:'Your next journey',destination:'',country:'',startDate:start,endDate:plusDays(start,4),adults:2,children:0,childrenAges:'',rooms:1,
+      id:id(),schemaVersion:1,quickText:'',reference:`AB-${String(Date.now()).slice(-6)}`,status:'Draft',customer:'',tripTitle:'Your next journey',destination:'',country:'',startDate:start,endDate:plusDays(start,4),adults:2,children:0,childrenAges:'',rooms:1,
       arrivalInfo:'',departureInfo:'',coverImage:'',preparedBy:{name:'',role:'Travel Consultant',phone:'',email:''},
       brand:{name:'Al Bahar Tours & Travels',tagline:'Discover the World with Us!',logo:ASSETS.logo,phone:'',email:'',website:''},
       hotel:{name:'',address:'',roomType:'',board:'Breakfast included',checkIn:start,checkOut:plusDays(start,4),description:'',highlights:'',notes:'',photos:[]},
@@ -114,7 +114,7 @@
   }
   function hydrateTrip(raw){
     const d=makeBlank(); if(!raw || typeof raw!=='object'||Array.isArray(raw))throw Error('Invalid itinerary file.');
-    for(const key of ['id','reference','status','customer','tripTitle','destination','country','startDate','endDate','childrenAges','arrivalInfo','departureInfo','coverImage','disclaimer'])if(typeof raw[key]==='string')d[key]=raw[key].slice(0,key==='disclaimer'?8000:15000);
+    for(const key of ['id','reference','status','customer','tripTitle','destination','country','startDate','endDate','childrenAges','arrivalInfo','departureInfo','coverImage','disclaimer','quickText'])if(typeof raw[key]==='string')d[key]=raw[key].slice(0,key==='disclaimer'?8000:15000);
     for(const key of ['adults','children','rooms'])if(Number.isFinite(Number(raw[key])))d[key]=Math.max(0,Math.min(10000,Number(raw[key])));
     for(const key of ['preparedBy','brand','hotel'])if(raw[key]&&typeof raw[key]==='object'&&!Array.isArray(raw[key])){
       for(const fieldName of Object.keys(d[key])){if(fieldName==='photos'){if(Array.isArray(raw[key].photos))d[key].photos=raw[key].photos.filter(s=>typeof s==='string'&&safeImage(s)).slice(0,6);}
@@ -125,7 +125,7 @@
     d.id ||= id();d.brand.logo=safeImage(d.brand.logo)||ASSETS.logo;d.coverImage=safeImage(d.coverImage);if(d.coverImage==='assets/dubai-skyline.jpg')d.coverImage='';d.updatedAt=new Date().toISOString();
     return d;
   }
-  let state={trips:[],activeId:'',tab:'trip',dayIndex:0,previewKey:'cover',mobileView:'edit'};
+  let state={trips:[],activeId:'',tab:'quick',dayIndex:0,previewKey:'cover',mobileView:'edit'};
   function load(){try{const raw=JSON.parse(localStorage.getItem(STORAGE)||'null');if(raw?.trips?.length){state.trips=raw.trips.slice(0,50).map(hydrateTrip);state.activeId=state.trips.find(t=>t.id===raw.activeId)?.id||state.trips[0].id;return;}}catch(e){console.warn('Could not read saved itineraries',e);}const first=sample();state.trips=[first];state.activeId=first.id;save();}
   function active(){return state.trips.find(t=>t.id===state.activeId)||state.trips[0];}
   function save(){try{localStorage.setItem(STORAGE,JSON.stringify({trips:state.trips,activeId:state.activeId}));const node=document.getElementById('saveStatus');if(node)node.innerHTML='<span class="save-dot"></span> Saved locally';return true;}catch(e){showToast('Browser storage is full. Export JSON to protect your work.');const node=document.getElementById('saveStatus');if(node)node.textContent='Storage full';return false;}}
@@ -133,7 +133,7 @@
   function showToast(message){const el=document.getElementById('toast');el.textContent=message;el.classList.add('show');clearTimeout(timer);timer=setTimeout(()=>el.classList.remove('show'),3800);}
   function modal(title,text,buttons){const root=document.getElementById('modalRoot');root.hidden=false;root.innerHTML=`<div class="modal-box" role="dialog" aria-modal="true"><h2>${esc(title)}</h2><p>${text}</p><div class="modal-footer">${buttons.map((b,i)=>`<button type="button" class="btn ${b.primary?'btn-primary':b.danger?'btn-danger':'btn-outline'}" data-modal-index="${i}">${esc(b.label)}</button>`).join('')}</div></div>`;root.querySelectorAll('[data-modal-index]').forEach(btn=>btn.addEventListener('click',()=>{root.hidden=true;root.innerHTML='';buttons[Number(btn.dataset.modalIndex)].action?.();}));}
   function renderNav(){
-    const choices=[['trip','Trip details','trip'],['hotel','Hotel & stay','hotel'],['days','Day-by-day plan','calendar'],['branding','Branding & contact','user']];
+    const choices=[['quick','Quick create','spark'],['trip','Trip details','trip'],['hotel','Hotel & stay','hotel'],['days','Day-by-day plan','calendar'],['branding','Branding & contact','user']];
     document.getElementById('mainNav').innerHTML=choices.map(([tab,label,ico])=>`<button class="nav-btn ${state.tab===tab?'active':''}" data-action="tab" data-tab="${tab}">${icon(ico)}<span>${label}</span>${state.tab===tab?`<span class="nav-arrow">${icon('chevron',true)}</span>`:''}</button>`).join('');
     document.getElementById('savedTripList').innerHTML=state.trips.map(t=>`<button class="saved-trip ${t.id===state.activeId?'active':''}" data-action="open-trip" data-id="${attr(t.id)}"><span class="saved-trip-icon">${icon('file',true)}</span><span><strong>${esc(t.tripTitle||'Untitled itinerary')}</strong><small>${esc(t.customer||'No customer')} · ${esc(t.reference||'No ref')}</small></span></button>`).join('');
   }
@@ -178,7 +178,71 @@
     info('This demo has no user authentication. Employee details are editable. In Phase 2, they can be read automatically from staff logins.')+
     `<div class="editor-actions"><button class="btn btn-quiet" data-action="download-json">${icon('download',true)} Back up itinerary</button><button class="btn btn-primary" data-action="print">${icon('file',true)} Export customer PDF</button></div>`;
   }
-  function renderEditor(){document.getElementById('editorContent').innerHTML=`<div class="editor-shell">${state.tab==='hotel'?renderHotel():state.tab==='days'?renderDays():state.tab==='branding'?renderBranding():renderTrip()}</div>`;}
+  // Quick Create removes repetitive entry. Full editor remains available for exceptional cases.
+  // These are *unconfirmed planning ideas*, never factual claims about available tickets or bookings.
+  const STARTER_PLANS={
+    dubai:[['Arrival and hotel check-in','Arrival / airport transfer','Evening at leisure'],['Dubai sightseeing','Dubai City Tour','Explore local attractions'],['Dubai highlights','Burj Khalifa','Dubai Miracle Garden'],['Desert experience','Desert Safari'],['Departure','Hotel checkout','Airport transfer']],
+    kashmir:[['Arrival in Srinagar','Arrival and hotel check-in','Dal Lake visit'],['Gulmarg excursion','Gulmarg sightseeing'],['Pahalgam excursion','Pahalgam sightseeing'],['Srinagar sightseeing','Local sightseeing','Shopping / leisure time'],['Departure','Hotel checkout','Airport transfer']],
+    kerala:[['Arrival in Kochi','Arrival and hotel check-in','Local sightseeing'],['Munnar visit','Munnar sightseeing','Tea plantation visit'],['Thekkady','Scenic drive to Thekkady','Leisure time'],['Backwaters','Alleppey backwater visit'],['Departure','Hotel checkout','Departure transfer']],
+    bali:[['Arrival in Bali','Arrival and hotel check-in'],['Ubud exploration','Ubud sightseeing','Rice terrace visit'],['Temple visits','Local temple sightseeing'],['Coastal experiences','Beach and coastal sightseeing'],['Departure','Hotel checkout','Airport transfer']]
+  };
+  const quickExample=`Day 1 - Arrival in Dubai\n- Airport pickup\n- Hotel check-in\n- Dhow Cruise with Dinner\n\nDay 2 - Abu Dhabi City Tour\n- 9:00 AM - Abu Dhabi sightseeing\n- Grand Mosque visit\n\nDay 3 - Burj Khalifa\n- Burj Khalifa visit\n- Dubai Miracle Garden`;
+  function quickSummary(t){return t.days.map((d,i)=>`<div class="quick-day-line"><span>DAY ${i+1}</span><div><strong>${esc(d.title||'Not planned')}</strong><small>${d.events.length} activities</small></div><button class="quick-edit-link" data-action="edit-quick-day" data-index="${i}">Edit</button></div>`).join('');}
+  function renderQuick(){
+    const t=active(),dest=catalogDestination(t),n=t.days.length;
+    return top('Create itinerary, faster','Only the essentials first. No need to fill every form or search for hotel photographs.',`<span class="pill-label">QUICK CREATE</span>`)+
+      `<div class="quick-intro"><div class="quick-step-num">01</div><div><strong>Enter four essentials</strong><p>Everything else is optional; the reference, duration, cover and layout are automatic.</p></div></div>`+
+      `<div class="quick-main-card"><div class="form-grid">${field('Customer name','customer',t.customer,{placeholder:'Name to appear on PDF',required:true})}${field('Destination','destination',t.destination,{placeholder:'Dubai, Kashmir, Kerala...',required:true})}${field('Start date','startDate',t.startDate,{type:'date'})}${field('End date','endDate',t.endDate,{type:'date'})}</div><div class="quick-collapsed"><div>${icon('check',true)} ${esc(durationLabel(t))} · ${esc(t.reference)}</div><div>${dest?`Cover automatically selected: ${esc(dest.name)}`:'Destination cover can be uploaded later'}</div></div></div>`+
+      `<div class="quick-intro"><div class="quick-step-num">02</div><div><strong>Add the plan in one go</strong><p>Paste a day-wise plan from the supplier or use a starter outline. Each bullet becomes an activity.</p></div></div>`+
+      `<div class="quick-main-card"><label class="quick-label" for="quickPlanInput">Paste day-wise plan (any destination)</label><textarea id="quickPlanInput" data-quick-plan rows="9" placeholder="${attr(quickExample)}">${esc(t.quickText||'')}</textarea><div class="quick-hint">Supported: “Day 1 - Arrival”, followed by one activity per line. Add optional times like “9:00 AM - City Tour”. No AI, API or login needed.</div><div class="quick-row"><button type="button" class="btn btn-primary" data-action="apply-quick-plan">${icon('check',true)} Build days from text</button><button type="button" class="btn btn-quiet" data-action="load-quick-example">Insert example format</button></div>${dest&&STARTER_PLANS[dest.id]?`<div class="quick-template"><strong>Planning shortcut for ${esc(dest.name)}</strong><p>Use a generic 5-day starter with editable activity names. These are suggestions, not confirmed arrangements.</p><button class="btn btn-quiet btn-mini" type="button" data-action="quick-template">Use ${esc(dest.name)} starter outline</button></div>`:''}</div>`+
+      `<div class="quick-intro"><div class="quick-step-num">03</div><div><strong>Review and export</strong><p>${n} days are ready. You can adjust any day, or add hotel and transfer details only when needed.</p></div></div>`+
+      `<div class="quick-main-card"><div class="quick-day-list">${quickSummary(t)}</div><div class="quick-row"><button class="btn btn-quiet" data-action="tab" data-tab="hotel">${icon('hotel',true)} Optional hotel details</button><button class="btn btn-quiet" data-action="tab" data-tab="branding">${icon('user',true)} Consultant details</button><button class="btn btn-quiet" data-action="tab" data-tab="trip">Advanced fields</button></div><div class="quick-row quick-export-row"><button class="btn btn-primary" data-action="print">${icon('file',true)} Preview / Export PDF</button></div><p class="quick-hint">The PDF contains only details entered or confirmed by your team. Blank optional sections are not invented.</p></div>`;
+  }
+  function planFromText(text,t){
+    const lines=String(text||'').replace(/\r/g,'').split('\n').map(s=>s.trim()).filter(Boolean);
+    if(!lines.length)return {error:'Paste a day-wise plan first.'};
+    if(lines.length>900)return {error:'The plan is too long. Please use up to 900 lines.'};
+    const parsed=[];let current=null;let implicit=false;
+    for(let line of lines){
+      const match=line.match(/^day\s*0*(\d{1,2})(?:\s*\([^)]{0,50}\))?\s*(?:[:.\-–—|)]\s*)?(.*)$/i);
+      if(match){const dayNumber=Number(match[1]);if(dayNumber<1||dayNumber>30)return {error:'Only Day 1 through Day 30 are supported.'};if(parsed.some(d=>d.number===dayNumber))return {error:`Day ${dayNumber} appears more than once. Please correct the headings.`};
+        current={number:dayNumber,title:(match[2]||'').trim(),events:[]};parsed.push(current);implicit=false;continue;}
+      if(!current){current={number:1,title:'',events:[]};parsed.push(current);implicit=true;}
+      line=line.replace(/^\s*(?:[•*\-–]|\d+[.)])\s+/,'').trim();
+      if(!line)continue;
+      let time='';const timed=line.match(/^((?:0?[1-9]|1[0-2])(?::[0-5]\d)?\s*(?:AM|PM))\s*[:\-–—]\s*(.+)$/i);
+      if(timed){time=timed[1].trim();line=timed[2].trim();}
+      if(line.length>180 && current.events.length){current.events.at(-1).description=(current.events.at(-1).description?current.events.at(-1).description+'\n':'')+line;continue;}
+      if(current.events.length<35)current.events.push({name:line.slice(0,250),time});
+    }
+    if(!parsed.length)return {error:'No activities found.'};
+    let max=Math.max(...parsed.map(x=>x.number));
+    if(implicit){max=1;}
+    if(max>t.days.length)return {error:`The pasted plan has Day ${max}, but the trip dates cover ${t.days.length} days. Adjust the return date first.`};
+    const days=Array.from({length:t.days.length},(_,i)=>blankDay(i));
+    for(const block of parsed){const d=days[block.number-1];d.title=block.title||block.events[0]?.name||`Day ${block.number}`;
+      d.events=block.events.map(x=>({...blankEvent(),name:x.name,time:x.time}));
+      // Preserve a supplied day title when no bullet activities were provided.
+      if(!d.events.length&&block.title)d.events=[{...blankEvent(),name:block.title}];
+    }
+    return {days:days.slice(0,30),parsed:parsed.length};
+  }
+  function applyParsedPlan(result){
+    const t=active();t.days=result.days;
+    if(!t.hotel.checkIn)t.hotel.checkIn=t.startDate;
+    if(!t.tripTitle||t.tripTitle==='Your next journey')t.tripTitle=`Trip to ${t.destination||'your destination'}`;
+    t.updatedAt=new Date().toISOString();state.dayIndex=0;state.previewKey='day:0:0';save();render();showToast(`${result.parsed} planned day${result.parsed===1?'':'s'} added. Review before sending.`);
+  }
+  function confirmPlanReplacement(result){const t=active();if(t.days.some(d=>d.events.length||d.title)){
+      modal('Replace existing daily plan?',`This will replace the ${t.days.length} day plan and its activities. Customer and hotel details will be retained.`,[
+        {label:'Keep existing plan'}, {label:'Replace plan',primary:true,action:()=>applyParsedPlan(result)}]);
+    }else applyParsedPlan(result);
+  }
+  function applyStarter(){const t=active(),dest=catalogDestination(t),rows=STARTER_PLANS[dest?.id];if(!rows){showToast('Choose Dubai, Kashmir, Kerala or Bali for a starter outline.');return;}
+    const days=t.days.map((_,i)=>{const row=rows[i];const d=blankDay(i);if(row){d.title=row[0];d.events=row.slice(1).map(name=>({...blankEvent(),name}));}else d.title=`Day ${i+1} · Plan to be confirmed`;return d;});
+    confirmPlanReplacement({days,parsed:days.length});
+  }
+  function renderEditor(){document.getElementById('editorContent').innerHTML=`<div class="editor-shell">${state.tab==='quick'?renderQuick():state.tab==='hotel'?renderHotel():state.tab==='days'?renderDays():state.tab==='branding'?renderBranding():renderTrip()}</div>`;}
   function durationLabel(t){const n=dateDiff(t.startDate,t.endDate);return n===null||n<0?'Check travel dates':`${n} nights · ${n+1} days`;}
   const ptxt = (v,fallback='—') => esc(String(v||'').trim()||fallback);
   function getPages(t){const pages=[{key:'cover',label:'Cover',kind:'cover'},{key:'prepared',label:'Prepared for',kind:'prepared'}];
@@ -253,8 +317,8 @@
     else if(action==='move-event-down'&&idx<d.events.length-1){[d.events[idx],d.events[idx+1]]=[d.events[idx+1],d.events[idx]];}
     active().updatedAt=new Date().toISOString();save();render();
   }
-  function createTrip(){if(state.trips.length>=50){showToast('Maximum of 50 browser-saved itineraries. Export old files first.');return;}const t=makeBlank();state.trips.unshift(t);state.activeId=t.id;state.tab='trip';state.dayIndex=0;state.previewKey='cover';save();render();showToast('New itinerary created.');}
-  function duplicateTrip(){if(state.trips.length>=50){showToast('Browser library is full. Export old itineraries first.');return;}const t=copy(active());t.id=id();t.tripTitle=(t.tripTitle||'Itinerary')+' — Copy';t.reference=`AB-${String(Date.now()).slice(-6)}`;t.updatedAt=new Date().toISOString();state.trips.unshift(t);state.activeId=t.id;state.previewKey='cover';state.tab='trip';state.dayIndex=0;save();render();showToast('Itinerary duplicated.');}
+  function createTrip(){if(state.trips.length>=50){showToast('Maximum of 50 browser-saved itineraries. Export old files first.');return;}const t=makeBlank();const prev=active();if(prev){t.brand=copy(prev.brand);t.preparedBy=copy(prev.preparedBy);}state.trips.unshift(t);state.activeId=t.id;state.tab='quick';state.dayIndex=0;state.previewKey='cover';save();render();showToast('New itinerary created.');}
+  function duplicateTrip(){if(state.trips.length>=50){showToast('Browser library is full. Export old itineraries first.');return;}const t=copy(active());t.id=id();t.tripTitle=(t.tripTitle||'Itinerary')+' — Copy';t.reference=`AB-${String(Date.now()).slice(-6)}`;t.updatedAt=new Date().toISOString();state.trips.unshift(t);state.activeId=t.id;state.previewKey='cover';state.tab='quick';state.dayIndex=0;save();render();showToast('Itinerary duplicated.');}
   function downloadJson(){const t=active();const blob=new Blob([JSON.stringify({schemaVersion:1,exportedAt:new Date().toISOString(),itinerary:t},null,2)],{type:'application/json'});downloadBlob(blob,`${slug(t.tripTitle||'itinerary')}-${slug(t.reference||'draft')}.json`);showToast('Itinerary backup downloaded.');}
   function slug(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,55)||'itinerary';}
   function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
@@ -266,9 +330,9 @@
   async function handleImageUpload(input){const type=input.dataset.upload,t=active(),files=Array.from(input.files||[]);if(!files.length)return;const max=type==='logo'?1100:1400;for(const file of files){const result=await optimizeImage(file,max);if(!result)continue;if(type==='cover')t.coverImage=result;else if(type==='logo')t.brand.logo=result;else if(type==='hotel'){if(t.hotel.photos.length>=6)break;t.hotel.photos.push(result);}}
     t.updatedAt=new Date().toISOString();save();render();showToast('Image added to itinerary.');
   }
-  async function handleImport(file){if(!file)return;try{if(file.size>12*1024*1024)throw Error('Backup file is too large.');const raw=JSON.parse(await file.text());let trip=hydrateTrip(raw.itinerary||raw);trip.id=id();if(state.trips.length>=50)throw Error('Saved itinerary limit reached.');state.trips.unshift(trip);state.activeId=trip.id;state.tab='trip';state.dayIndex=0;state.previewKey='cover';save();render();showToast('Itinerary imported successfully.');}catch(e){showToast(`Cannot import: ${e.message||'invalid file'}`);}}
+  async function handleImport(file){if(!file)return;try{if(file.size>12*1024*1024)throw Error('Backup file is too large.');const raw=JSON.parse(await file.text());let trip=hydrateTrip(raw.itinerary||raw);trip.id=id();if(state.trips.length>=50)throw Error('Saved itinerary limit reached.');state.trips.unshift(trip);state.activeId=trip.id;state.tab='quick';state.dayIndex=0;state.previewKey='cover';save();render();showToast('Itinerary imported successfully.');}catch(e){showToast(`Cannot import: ${e.message||'invalid file'}`);}}
   document.addEventListener('focusin',e=>{if(e.target.matches('[data-field="destination"]'))e.target.dataset.startValue=e.target.value;});
-  document.addEventListener('input', e=>{const node=e.target;if(!node.matches('[data-field]'))return;if(node.type==='date'||node.tagName==='SELECT')return;const t=active(),path=node.dataset.field;set(t,path,node.type==='number'?Math.max(0,Number(node.value)||0):node.value);t.updatedAt=new Date().toISOString();save();renderPreviewNav();renderPreview();});
+  document.addEventListener('input', e=>{const node=e.target;if(node.matches('[data-quick-plan]')){active().quickText=node.value.slice(0,30000);save();return;}if(!node.matches('[data-field]'))return;if(node.type==='date'||node.tagName==='SELECT')return;const t=active(),path=node.dataset.field;set(t,path,node.type==='number'?Math.max(0,Number(node.value)||0):node.value);t.updatedAt=new Date().toISOString();save();renderPreviewNav();renderPreview();});
   document.addEventListener('change', e=>{
     const el=e.target;if(el.matches('[data-upload]')){handleImageUpload(el);return;}
     if(!el.matches('[data-field]'))return;
@@ -276,7 +340,7 @@
     // detach the user's next clicked button before its click event fires.
     if(el.dataset.field==='destination'){
       const t=active(),chosen=safeImage(t.coverImage),d=catalogDestination(t);
-      if(el.value !== (el.dataset.startValue??el.value))t.coverImage='';
+      if(el.value !== (el.dataset.startValue??el.value)){t.coverImage='';if(!t.tripTitle||t.tripTitle==='Your next journey'||t.tripTitle===`Trip to ${el.dataset.startValue}`)t.tripTitle=`Trip to ${el.value||'your destination'}`;}
       else if(chosen.startsWith('assets/destinations/') && !catalogImages(d).some(x=>x.src===chosen))t.coverImage='';
       save();render();return;
     }
@@ -292,8 +356,12 @@
     if(act==='toggle-menu'){document.getElementById('sidebar').classList.toggle('open');return;}
     if(act==='tab'){switchTab(btn.dataset.tab);return;}
     if(act==='new-trip'){createTrip();return;}
-    if(act==='open-trip'){state.activeId=btn.dataset.id;state.tab='trip';state.dayIndex=0;state.previewKey='cover';save();switchTab('trip');return;}
+    if(act==='open-trip'){state.activeId=btn.dataset.id;state.tab='quick';state.dayIndex=0;state.previewKey='cover';save();switchTab('quick');return;}
     if(act==='duplicate-trip'){duplicateTrip();return;}
+    if(act==='apply-quick-plan'){const result=planFromText(t.quickText,t);if(result.error)showToast(result.error);else confirmPlanReplacement(result);return;}
+    if(act==='load-quick-example'){t.quickText=quickExample;save();render();showToast('Example loaded. Replace the sample activities with the confirmed plan.');return;}
+    if(act==='quick-template'){applyStarter();return;}
+    if(act==='edit-quick-day'){state.dayIndex=Math.max(0,Number(btn.dataset.index)||0);state.previewKey=`day:${state.dayIndex}:0`;switchTab('days');return;}
     if(act==='print'){startPrint();return;}
     if(act==='download-json'){downloadJson();return;}
     if(act==='preview-page'){state.previewKey=btn.dataset.key;renderPreviewNav();renderPreview();return;}
@@ -316,7 +384,7 @@
   const extraStyles=document.createElement('style');extraStyles.textContent='.quick-tools{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:16px}';document.head.append(extraStyles);
   const oldRenderBranding=renderBranding;
   renderBranding=function(){return oldRenderBranding()+`<div class="section-card"><div class="card-head"><div><h3>Workspace tools</h3><p>Manage your saved demo itineraries.</p></div><span class="card-symbol">${icon('settings')}</span></div><div class="quick-tools"><button class="btn btn-quiet btn-mini" data-action="import-json">Import JSON backup</button><button class="btn btn-danger btn-mini" data-action="delete-trip">Delete this itinerary</button></div>${info('All drafts are saved in this browser only. Export JSON backups regularly. The GitHub Pages demo does not sync data between employees or devices.')}</div>`;};
-  document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;if(b.dataset.action==='import-json')document.getElementById('importFile').click();if(b.dataset.action==='delete-trip'){modal('Delete this itinerary?',`The current itinerary will be permanently removed from this browser’s saved drafts. Back it up first if necessary.`,[{label:'Cancel'},{label:'Delete itinerary',danger:true,action:()=>{state.trips=state.trips.filter(t=>t.id!==state.activeId);if(!state.trips.length)state.trips=[makeBlank()];state.activeId=state.trips[0].id;state.tab='trip';state.dayIndex=0;state.previewKey='cover';save();render();showToast('Itinerary deleted.');}}]);}});
+  document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;if(b.dataset.action==='import-json')document.getElementById('importFile').click();if(b.dataset.action==='delete-trip'){modal('Delete this itinerary?',`The current itinerary will be permanently removed from this browser’s saved drafts. Back it up first if necessary.`,[{label:'Cancel'},{label:'Delete itinerary',danger:true,action:()=>{state.trips=state.trips.filter(t=>t.id!==state.activeId);if(!state.trips.length)state.trips=[makeBlank()];state.activeId=state.trips[0].id;state.tab='quick';state.dayIndex=0;state.previewKey='cover';save();render();showToast('Itinerary deleted.');}}]);}});
   document.querySelectorAll('[data-icon]').forEach(node=>{node.innerHTML=icon(node.dataset.icon,true);});
   load();render();
 })();
