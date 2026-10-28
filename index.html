@@ -1,68 +1,43 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a203c" />
-  <meta name="description" content="Al Bahar Tours & Travels — create beautifully personalised travel itineraries." />
-  <title>Itinerary Studio | Al Bahar Tours & Travels</title>
-  <link rel="icon" href="assets/al-bahar-logo.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#14243a">
+  <meta name="description" content="Al Bahar Journey Desk – custom travel itineraries, made simple.">
+  <title>Journey Desk — Al Bahar Tours & Travels</title>
+  <link rel="icon" href="assets/al-bahar-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
 </head>
 <body>
-  <div id="appShell">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="icon-btn mobile-menu" type="button" data-action="toggle-menu" aria-label="Open navigation"><span class="hamburger">☰</span></button>
-        <div class="brand-lockup">
-          <div class="brand-icon"><span class="brand-monogram">AB</span></div>
-          <div class="brand-name"><strong>Itinerary<span>Studio</span></strong><small>AL BAHAR TOURS & TRAVELS</small></div>
-        </div>
-        <span class="edition-pill">DEMO · V1.3</span>
-      </div>
-      <div class="topbar-right">
-        <span class="save-indicator" id="saveStatus"><span class="save-dot"></span> Saved locally</span>
-        <button class="btn btn-quiet hide-mobile" type="button" data-action="download-json" title="Back up the current itinerary"><span data-icon="download"></span> Export data</button>
-        <button class="btn btn-primary" type="button" data-action="print"><span data-icon="file"></span><span class="print-button-label"> Export PDF</span></button>
-      </div>
-    </header>
-
-    <div class="app-layout">
-      <aside class="sidebar" id="sidebar">
-        <div class="sidebar-scroll">
-          <div class="sidebar-intro"><span class="eyebrow">YOUR WORKSPACE</span><h2>Travel, beautifully planned.</h2><p>Craft exceptional itineraries in minutes.</p></div>
-          <div class="sidebar-divider"></div>
-          <div class="nav-section-label">WORKSPACE</div>
-          <nav class="main-nav" id="mainNav"></nav>
-          <div class="sidebar-divider"></div>
-          <div class="nav-section-header"><span class="nav-section-label">YOUR ITINERARIES</span><button type="button" class="micro-btn" data-action="new-trip" title="New itinerary">+</button></div>
-          <div id="savedTripList" class="saved-trip-list"></div>
-          <div class="sidebar-tip"><span class="tip-icon">✦</span><p><strong>Made for your team</strong><br/>Google hotel search is optional. No live prices. Create, preview and share.</p></div>
-        </div>
-        <div class="sidebar-bottom"><span class="live-dot"></span><span>V1.3 · Quick create + hotel search</span></div>
-      </aside>
-
-      <main class="workspace">
-        <section class="editor-panel" id="editorPanel">
-          <div id="editorContent"></div>
-        </section>
-        <section class="preview-panel" id="previewPanel">
-          <div class="preview-toolbar"><div><span class="eyebrow">CUSTOMER VIEW</span><h3>Live preview</h3></div><div class="preview-live"><span class="live-dot"></span> LIVE</div></div>
-          <div class="preview-navigation" id="previewNavigation"></div>
-          <div class="preview-background"><div id="previewStage" class="preview-stage"></div></div>
-          <div class="preview-bottom"><span>Designed for A4 printing</span><button type="button" class="link-button" data-action="print">Open print dialog ↗</button></div>
-        </section>
-      </main>
+  <div id="app">
+    <aside class="rail" id="rail">
+      <a class="rail-brand" href="#" aria-label="Al Bahar Journey Desk" data-act="home"><span class="rail-logo-frame"><img src="assets/al-bahar-logo.png" alt="Al Bahar Tours & Travels logo"></span><span class="rail-brand-txt"><b>JOURNEY DESK</b><small>AL BAHAR TOURS & TRAVELS</small></span></a>
+      <div class="rail-stamp">TRAVEL DESIGN WORKSPACE</div>
+      <nav class="rail-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-view="workspace"><span class="nav-glyph">▦</span> Itinerary desk</button>
+        <button class="nav-item" data-view="trips"><span class="nav-glyph">▤</span> Saved journeys <span class="nav-counter" id="navTripCount">0</span></button>
+        <button class="nav-item" data-view="masters"><span class="nav-glyph">▧</span> Master templates</button>
+        <button class="nav-item" data-view="agency"><span class="nav-glyph">◎</span> Agency & staff</button>
+      </nav>
+      <div class="rail-bottom"><span class="rail-line"></span><small>MADE FOR TRAVEL PLANNERS</small><p>One well-designed itinerary. Every destination, every customer.</p><span class="rail-edition">PRIVATE DEMO / 02</span></div>
+    </aside>
+    <div class="main-shell">
+      <header class="top-header">
+        <div class="top-left"><button class="mobile-trigger" type="button" data-act="toggle-menu" aria-label="Toggle menu">☰</button><span class="crumb-main">AL BAHAR <span class="crumb-sep">/</span> <span id="crumbView">ITINERARY DESK</span></span></div>
+        <div class="top-actions"><span class="save-state" id="saveState">●&nbsp; Saved on this device</span><button class="btn quiet" type="button" data-act="open-preview">Preview</button><button class="btn dark" type="button" data-act="print-pdf">Export PDF <span aria-hidden="true">↗</span></button></div>
+      </header>
+      <main id="screen" tabindex="-1"></main>
     </div>
-    <nav class="mobile-tabs" id="mobileTabs"><button data-action="mobile-view" data-view="edit" class="active">✎ &nbsp; Edit</button><button data-action="mobile-view" data-view="preview">▤ &nbsp; Preview</button></nav>
   </div>
+  <div id="dialogBackdrop" class="dialog-backdrop" hidden><div id="dialogBody" class="dialog" role="dialog" aria-modal="true"></div></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="printRoot" aria-hidden="true"></div>
-  <input type="file" id="importFile" accept=".json,application/json" hidden />
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <div class="modal-backdrop" id="modalRoot" hidden></div>
-  <script src="app.js" defer></script>
+  <input id="jsonInput" type="file" accept="application/json,.json" hidden>
+  <input id="coverUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden>
 </body>
 </html>
